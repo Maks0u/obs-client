@@ -1,0 +1,29 @@
+{
+  "name": "obs-client",
+  "version": "1.0.0",
+  "author": "Maks0u",
+  "license": "MIT",
+  "description": "Wrapper for obs-websocket-js",
+  "keywords": [
+    "obs",
+    "twitch",
+    "stream",
+    "streaming",
+    "websocket"
+  ],
+  "type": "module",
+  "main": "index.js",
+  "files": [
+    "index.js",
+    "src"
+  ],
+  "scripts": {
+    "test": "mocha --timeout 10000"
+  },
+  "dependencies": {
+    "obs-websocket-js": "^5.0.5"
+  },
+  "devDependencies": {
+    "mocha": "^10.7.0"
+  }
+}
