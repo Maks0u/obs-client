@@ -1,6 +1,6 @@
 import assert from 'node:assert';
 import { after, before, describe, it } from 'mocha';
-import ObsClient, { Scene, Stream } from '../index.js';
+import ObsClient, { Hotkey, Scene, sleep, Stream } from '../index.js';
 
 const host = process.env.OBS_WS_HOST;
 const port = process.env.OBS_WS_PORT;
@@ -32,11 +32,6 @@ describe('ObsClient', () => {
   it('has scene collection', () => {
     assert.ok(obs.scenes instanceof Map);
     assert.ok(obs.scenes.size);
-  });
-
-  it('has audio input collection', () => {
-    assert.ok(obs.audioInputs instanceof Map);
-    assert.ok(obs.audioInputs.size);
   });
 
   it('get active scene', async () => {
@@ -95,6 +90,11 @@ describe('ObsClient', () => {
     });
   });
 
+  it('has audio input collection', () => {
+    assert.ok(obs.audioInputs instanceof Map);
+    assert.ok(obs.audioInputs.size);
+  });
+
   describe('AudioInput', () => {
     before(() => {
       // Game
@@ -135,6 +135,27 @@ describe('ObsClient', () => {
 
       // reset
       await testInput.setVolume(volume1);
+    });
+  });
+
+  it('has hotkey collection', async () => {
+    assert.ok(obs.hotkeys instanceof Map);
+    assert.ok(obs.hotkeys.size);
+  });
+
+  describe('Hotkey', () => {
+    it('get hotkey by name', () => {
+      const disablePreview = obs.hotkeys.get('OBSBasic.DisablePreview');
+      assert.ok(disablePreview instanceof Hotkey);
+    });
+
+    it('trigger hotkey', async () => {
+      const disablePreview = obs.hotkeys.get('OBSBasic.DisablePreview');
+      const enablePreview = obs.hotkeys.get('OBSBasic.EnablePreview');
+
+      await disablePreview.trigger();
+      await sleep(500);
+      await enablePreview.trigger();
     });
   });
 });

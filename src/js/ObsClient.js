@@ -1,5 +1,5 @@
 import OBSWebSocket from 'obs-websocket-js';
-import { AudioInput, Scene, Stream, waitFor } from '../../index.js';
+import { AudioInput, Hotkey, Scene, Stream, waitFor } from '../../index.js';
 
 /**
  * Wrapper for obs-websocket-js
@@ -9,6 +9,8 @@ export default class ObsClient {
   audioInputs;
   /** @private @type {boolean} */
   connected = false;
+  /** @type {Map<string, Hotkey>} */
+  hotkeys;
   /** @private @type {boolean} */
   inited = false;
   /** @private @type {string} */
@@ -99,18 +101,14 @@ export default class ObsClient {
   async load() {
     this.stream = new Stream(this);
 
-    this.scenes = new Map(
-      (await this.getSceneList()).map(s => [s.sceneUuid, s])
-    );
+    this.scenes = new Map((await this.getSceneList()).map(s => [s.sceneUuid, s]));
 
-    this.audioInputs = new Map(
-      (await this.getAudioInputList()).map(i => [i.inputUuid, i])
-    );
+    this.audioInputs = new Map((await this.getAudioInputList()).map(i => [i.inputUuid, i]));
+
+    this.hotkeys = new Map((await this.getHotkeylist()).map(h => [h.name, h]));
 
     await waitFor(() => this.stream.inited);
-    await Promise.all(
-      [...this.scenes.values()].map(scene => waitFor(() => scene.inited))
-    );
+    await Promise.all([...this.scenes.values()].map(scene => waitFor(() => scene.inited)));
   }
 
   /**
@@ -178,9 +176,7 @@ export default class ObsClient {
    * @returns {Promise<Scene[]>}
    */
   async getSceneList() {
-    return (await this.ws.call('GetSceneList')).scenes.map(
-      s => new Scene(this, s)
-    );
+    return (await this.ws.call('GetSceneList')).scenes.map(s => new Scene(this, s));
   }
 
   /**
@@ -208,5 +204,13 @@ export default class ObsClient {
     return (await this.ws.callBatch(batch))
       .flatMap(res => res.responseData.inputs)
       .map(i => new AudioInput(this, i));
+  }
+
+  /**
+   * @private
+   * @returns {Promise<Hotkey[]>}
+   */
+  async getHotkeylist() {
+    return (await this.ws.call('GetHotkeyList')).hotkeys.map(s => new Hotkey(this, s));
   }
 }
