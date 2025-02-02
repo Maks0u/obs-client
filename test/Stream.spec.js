@@ -12,63 +12,63 @@ let obs;
 let stream;
 
 describe('Stream', () => {
-  before(async () => {
-    obs = new ObsClient(port, host, password);
-    await obs.init();
-    stream = obs.stream;
-  });
+    before(async () => {
+        obs = new ObsClient(port, host, password);
+        await obs.init();
+        stream = obs.stream;
+    });
 
-  beforeEach(async () => {
-    if (!(await stream.bandwidthTestActive())) {
-      throw new Error('Please activate bandwidth test in OBS settings');
-    }
-  });
+    beforeEach(async () => {
+        if (!(await stream.bandwidthTestActive())) {
+            throw new Error('Please activate bandwidth test in OBS settings');
+        }
+    });
 
-  after(() => {
-    obs.destroy();
-  });
+    after(() => {
+        obs.destroy();
+    });
 
-  it('getStatus', async () => {
-    const status = await stream.getStatus();
-    assert.equal(typeof status.outputActive, 'boolean');
-    assert.equal(typeof status.outputBytes, 'number');
-    assert.equal(typeof status.outputCongestion, 'number');
-    assert.equal(typeof status.outputDuration, 'number');
-    assert.equal(typeof status.outputReconnecting, 'boolean');
-    assert.equal(typeof status.outputSkippedFrames, 'number');
-    assert.equal(typeof status.outputTimecode, 'string');
-    assert.equal(typeof status.outputTotalFrames, 'number');
-  });
+    it('getStatus', async () => {
+        const status = await stream.getStatus();
+        assert.equal(typeof status.outputActive, 'boolean');
+        assert.equal(typeof status.outputBytes, 'number');
+        assert.equal(typeof status.outputCongestion, 'number');
+        assert.equal(typeof status.outputDuration, 'number');
+        assert.equal(typeof status.outputReconnecting, 'boolean');
+        assert.equal(typeof status.outputSkippedFrames, 'number');
+        assert.equal(typeof status.outputTimecode, 'string');
+        assert.equal(typeof status.outputTotalFrames, 'number');
+    });
 
-  it('getActiveStatus', async () => {
-    const active = await stream.getActiveStatus();
-    assert.equal(typeof active, 'boolean');
-  });
+    it('getActiveStatus', async () => {
+        const active = await stream.getActiveStatus();
+        assert.equal(typeof active, 'boolean');
+    });
 
-  it('bandwidthTestActive', async () => {
-    const bwtest = await stream.bandwidthTestActive();
-    assert.equal(typeof bwtest, 'boolean');
-  });
+    it('bandwidthTestActive', async () => {
+        const bwtest = await stream.bandwidthTestActive();
+        assert.equal(typeof bwtest, 'boolean');
+    });
 
-  it('toggleBandwidthTest', async () => {
-    const bwtestBefore = await stream.bandwidthTestActive();
-    await stream.toggleBandwidthTest();
-    const bwtestAfter = await stream.bandwidthTestActive();
-    assert.equal(bwtestAfter, !bwtestBefore);
+    it('toggleBandwidthTest', async () => {
+        const bwtestBefore = await stream.bandwidthTestActive();
+        await stream.toggleBandwidthTest();
+        const bwtestAfter = await stream.bandwidthTestActive();
+        assert.equal(bwtestAfter, !bwtestBefore);
 
-    // reset
-    await stream.toggleBandwidthTest();
-  });
+        // reset
+        await stream.toggleBandwidthTest();
+    });
 
-  it('startStream', async () => {
-    assert.ok(!(await stream.getActiveStatus()));
-    await stream.start();
-    assert.ok(await stream.getActiveStatus());
-  });
+    it('startStream', async () => {
+        assert.ok(!(await stream.getActiveStatus()));
+        await stream.start();
+        assert.ok(await stream.getActiveStatus());
+    });
 
-  it('stopStream', async () => {
-    assert.ok(await stream.getActiveStatus());
-    await stream.stop();
-    assert.ok(!(await stream.getActiveStatus()));
-  });
+    it('stopStream', async () => {
+        assert.ok(await stream.getActiveStatus());
+        await stream.stop();
+        assert.ok(!(await stream.getActiveStatus()));
+    });
 });

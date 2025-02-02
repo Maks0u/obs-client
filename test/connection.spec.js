@@ -10,45 +10,53 @@ const password = process.env.OBS_WS_PASSWORD;
 let obs;
 
 describe('Connection', () => {
-  beforeEach(async () => {
-    obs = new ObsClient(port, host, password);
-    await obs.init();
-  });
+    beforeEach(async () => {
+        obs = new ObsClient(port, host, password);
+        await obs.init();
+    });
 
-  afterEach(async () => {
-    await obs.destroy();
-  });
+    afterEach(async () => {
+        await obs.destroy();
+    });
 
-  after(() => {
-    obs.destroy();
-  });
+    after(() => {
+        obs.destroy();
+    });
 
-  it('can connect', async () => {
-    assert.ok(obs.isConnected());
-  });
+    it('can connect', async () => {
+        assert.ok(obs.isConnected());
+    });
 
-  it('can disconnect', async () => {
-    await obs.destroy();
-    assert.ok(!obs.isConnected());
-  });
+    it('can disconnect', async () => {
+        await obs.destroy();
+        assert.ok(!obs.isConnected());
+    });
 
-  it('calling init() mutliple times will not create new connection', async () => {
-    await obs.init();
-    await obs.init();
-    assert.ok(obs.isConnected());
-  });
+    it('calling init() mutliple times will not create new connection', async () => {
+        await obs.init();
+        await obs.init();
+        assert.ok(obs.isConnected());
+    });
 
-  it('calling destroy() multiple times will have no effect', async () => {
-    assert.ok(obs.isConnected());
-    await obs.destroy();
-    await obs.destroy();
-    assert.ok(!obs.isConnected());
-  });
+    it('calling init() multiple times at once will not result in a crash', async () => {
+        await obs.destroy();
+        assert.ok(!obs.isConnected());
+        obs.init();
+        await obs.init();
+        assert.ok(obs.isConnected());
+    });
 
-  it('disconnect on error', async () => {
-    assert.ok(obs.isConnected());
-    obs.ws.emit('ConnectionError');
-    await waitFor(() => !obs.isConnected());
-    assert.ok(!obs.isConnected());
-  });
+    it('calling destroy() multiple times will have no effect', async () => {
+        assert.ok(obs.isConnected());
+        await obs.destroy();
+        await obs.destroy();
+        assert.ok(!obs.isConnected());
+    });
+
+    it('disconnect on error', async () => {
+        assert.ok(obs.isConnected());
+        obs.ws.emit('ConnectionError');
+        await waitFor(() => !obs.isConnected());
+        assert.ok(!obs.isConnected());
+    });
 });
