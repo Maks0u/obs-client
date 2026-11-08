@@ -1,6 +1,6 @@
 import assert from 'node:assert';
 import { after, before, describe, it } from 'mocha';
-import ObsClient, { Hotkey, Scene, sleep, Stream } from '../index.js';
+import ObsClient, { Hotkey, Scene, sleep, Stream } from '../dist/index.js';
 
 const host = process.env.OBS_WS_HOST;
 const port = process.env.OBS_WS_PORT;
