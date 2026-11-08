@@ -1,47 +1,38 @@
-import OBSWebSocket from 'obs-websocket-js';
-import { AudioInput, Hotkey, Scene, Stream, waitFor } from '../../index.js';
+import OBSWebSocket, {
+    type OBSResponseTypes,
+    type RequestBatchRequest,
+    type ResponseMessage,
+} from 'obs-websocket-js';
+import { AudioInput } from './AudioInput.js';
+import { Hotkey } from './Hotkey.js';
+import { Scene } from './Scene.js';
+import { Stream } from './Stream.js';
+import type { InputConfig, SceneConfig } from './types.js';
+import { waitFor } from './utils.js';
 
-/**
- * Wrapper for obs-websocket-js
- */
-export default class ObsClient {
-    /** @type {Map<string, AudioInput>} */
-    audioInputs;
-    /** @private @type {boolean} */
+export class ObsClient {
+    audioInputs: Map<string, AudioInput>;
     connected = false;
-    /** @type {Map<string, Hotkey>} */
-    hotkeys;
-    /** @private @type {boolean} */
+    hotkeys: Map<string, Hotkey>;
     inited = false;
-    /** @private @type {boolean} */
     initing = false;
-    /** @private @type {string} */
-    password;
-    /** @type {Map<string, Scene>} */
-    scenes;
-    /** @type {Stream} */
-    stream;
-    /** @private @type {string} */
-    url;
-    /** @type {OBSWebSocket} */
-    ws = new OBSWebSocket();
+    password: string;
+    scenes: Map<string, Scene>;
+    // @ts-ignore
+    stream: Stream;
+    url: string;
+    ws: OBSWebSocket;
 
-    /**
-     * @param {string} port
-     * @param {string} host
-     * @param {string} password
-     */
     constructor(port = '4455', host = '127.0.0.1', password = '') {
         this.url = `ws://${host}:${port}`;
         this.password = password;
+        this.audioInputs = new Map();
+        this.hotkeys = new Map();
+        this.scenes = new Map();
+        this.ws = new OBSWebSocket();
     }
 
-    // ==================== Connection ==================== //
-
-    /**
-     * @returns {Promise<void>}
-     */
-    async init() {
+    async init(): Promise<void> {
         if (this.inited) return;
 
         // prevents a crash if init() has just been called but is not yet completed
@@ -58,45 +49,30 @@ export default class ObsClient {
 
     /**
      * Reverse init actions
-     * @returns {Promise<void>}
      */
-    async destroy() {
+    async destroy(): Promise<void> {
         await this.disconnect();
         this.removeAllListeners();
         this.inited = false;
     }
 
-    /**
-     * @returns {Promise<void>}
-     */
-    async reinit() {
+    async reinit(): Promise<void> {
         await this.destroy();
         await this.init();
     }
 
-    /**
-     * @returns {boolean}
-     */
-    isConnected() {
+    isConnected(): boolean {
         return this.connected;
     }
 
-    /**
-     * @private
-     * @returns {Promise<void>}
-     */
-    async connect() {
+    private async connect(): Promise<void> {
         if (this.connected) return;
 
         await this.ws.connect(this.url, this.password);
         await waitFor(() => this.connected);
     }
 
-    /**
-     * @private
-     * @returns {Promise<void>}
-     */
-    async disconnect() {
+    private async disconnect(): Promise<void> {
         if (!this.connected) return;
 
         await this.ws.disconnect();
@@ -105,10 +81,8 @@ export default class ObsClient {
 
     /**
      * Load scenes, inputs, etc.
-     * @private
-     * @returns {Promise<void>}
      */
-    async load() {
+    private async load(): Promise<void> {
         this.stream = new Stream(this);
 
         this.scenes = new Map((await this.getSceneList()).map(s => [s.sceneUuid, s]));
@@ -123,10 +97,8 @@ export default class ObsClient {
 
     /**
      * Subscribe to listeners
-     * @private
-     * @returns {void}
      */
-    initListeners() {
+    private initListeners(): void {
         this.ws.on('ConnectionOpened', this.onConnectionOpened, this);
         this.ws.on('ConnectionClosed', this.onConnectionClosed, this);
         this.ws.on('ConnectionError', this.onConnectionError, this);
@@ -135,66 +107,59 @@ export default class ObsClient {
         this.ws.on('InputVolumeChanged', this.onInputVolumeChange, this);
     }
 
-    /** @private */
-    removeAllListeners() {
+    private removeAllListeners(): void {
         this.ws.removeAllListeners();
     }
 
-    // ==================== Events ==================== //
-
-    /** @private */
-    onConnectionOpened() {
+    private onConnectionOpened(): void {
         this.connected = true;
     }
 
-    /** @private */
-    onConnectionClosed() {
+    private onConnectionClosed(): void {
         this.connected = false;
     }
 
-    /** @private */
-    onConnectionError() {
+    private onConnectionError(): void {
         this.destroy();
     }
 
-    /** @private */
-    onExitStarted() {
+    private onExitStarted(): void {
         this.destroy();
     }
 
-    /** @private */
-    onInputMuteChange({ inputName, inputUuid, inputMuted }) {
+    private onInputMuteChange({
+        inputName,
+        inputUuid,
+        inputMuted,
+    }: { inputName: string; inputUuid: string; inputMuted: boolean }): void {
         this.audioInputs.get(inputUuid)?.emit(inputMuted ? 'mute' : 'unmute');
     }
 
-    /** @private */
-    onInputVolumeChange({ inputName, inputUuid, inputVolumeMul, inputVolumeDb }) {
+    private onInputVolumeChange({
+        inputName,
+        inputUuid,
+        inputVolumeMul,
+        inputVolumeDb,
+    }: {
+        inputName: string;
+        inputUuid: string;
+        inputVolumeMul: number;
+        inputVolumeDb: number;
+    }): void {
         this.audioInputs.get(inputUuid)?.emit('volumechange', inputVolumeDb);
     }
 
-    // ==================== Requests ==================== //
-
-    /**
-     * @returns {Promise<Scene>}
-     */
-    async getCurrentProgramScene() {
+    async getCurrentProgramScene(): Promise<Scene> {
         return new Scene(this, await this.ws.call('GetCurrentProgramScene'));
     }
 
-    /**
-     * @private
-     * @returns {Promise<Scene[]>}
-     */
-    async getSceneList() {
-        return (await this.ws.call('GetSceneList')).scenes.map(s => new Scene(this, s));
+    private async getSceneList(): Promise<Scene[]> {
+        const { scenes } = await this.ws.call('GetSceneList');
+        return scenes.map((config: unknown) => new Scene(this, config as SceneConfig));
     }
 
-    /**
-     * @private
-     * @returns {Promise<AudioInput[]>}
-     */
-    async getAudioInputList() {
-        const batch = [
+    private async getAudioInputList(): Promise<AudioInput[]> {
+        const batch: RequestBatchRequest[] = [
             'browser_source',
             'vlc_source',
             'audio_capture',
@@ -211,16 +176,16 @@ export default class ObsClient {
             };
         });
 
-        return (await this.ws.callBatch(batch))
-            .flatMap(res => res.responseData.inputs)
-            .map(i => new AudioInput(this, i));
+        const responses: ResponseMessage[] = await this.ws.callBatch(batch);
+        return responses
+            .flatMap(
+                ({ responseData }) => (responseData as OBSResponseTypes['GetInputList']).inputs
+            )
+            .map((config: unknown) => new AudioInput(this, config as InputConfig));
     }
 
-    /**
-     * @private
-     * @returns {Promise<Hotkey[]>}
-     */
-    async getHotkeylist() {
-        return (await this.ws.call('GetHotkeyList')).hotkeys.map(s => new Hotkey(this, s));
+    private async getHotkeylist(): Promise<Hotkey[]> {
+        const { hotkeys } = await this.ws.call('GetHotkeyList');
+        return hotkeys.map(name => new Hotkey(this, name));
     }
 }
