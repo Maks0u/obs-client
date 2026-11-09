@@ -23,5 +23,4 @@ jobs:
           package-manager-cache: false  # never use caching in release builds
       - run: npm ci
       - run: npm run build
-      - run: npm config set //registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}
-      - run: npm stage publish --tag "$([[ GITHUB_REF_NAME =~ '-rc' ]] && printf 'next' || printf 'latest')"
+      - run: npm stage publish --tag "$([[ "${GITHUB_REF_NAME}" =~ '-rc' ]] && printf 'next' || printf 'latest')"
