@@ -7,13 +7,17 @@ export class Stream {
     private readonly obs: ObsClient;
     isActive = false;
 
-    constructor(obsClient: ObsClient) {
+    private constructor(obsClient: ObsClient) {
         this.obs = obsClient;
-
-        this.init();
     }
 
-    async init(): Promise<void> {
+    static async create(obsClient: ObsClient): Promise<Stream> {
+        const stream = new Stream(obsClient);
+        await stream.init();
+        return stream;
+    }
+
+    private async init(): Promise<void> {
         this.isActive = await this.getActiveStatus();
         this.inited = true;
     }

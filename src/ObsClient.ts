@@ -83,16 +83,13 @@ export class ObsClient {
      * Load scenes, inputs, etc.
      */
     private async load(): Promise<void> {
-        this.stream = new Stream(this);
+        this.stream = await Stream.create(this);
 
         this.scenes = new Map((await this.getSceneList()).map(s => [s.sceneUuid, s]));
 
         this.audioInputs = new Map((await this.getAudioInputList()).map(i => [i.inputUuid, i]));
 
         this.hotkeys = new Map((await this.getHotkeylist()).map(h => [h.name, h]));
-
-        await waitFor(() => this.stream.inited);
-        await Promise.all([...this.scenes.values()].map(scene => waitFor(() => scene.inited)));
     }
 
     /**
@@ -150,12 +147,15 @@ export class ObsClient {
     }
 
     async getCurrentProgramScene(): Promise<Scene> {
-        return new Scene(this, await this.ws.call('GetCurrentProgramScene'));
+        const sceneConfig = await this.ws.call('GetCurrentProgramScene');
+        return await Scene.create(this, sceneConfig);
     }
 
     private async getSceneList(): Promise<Scene[]> {
         const { scenes } = await this.ws.call('GetSceneList');
-        return scenes.map((config: unknown) => new Scene(this, config as SceneConfig));
+        return Promise.all(
+            scenes.map((config: unknown) => Scene.create(this, config as SceneConfig))
+        );
     }
 
     private async getAudioInputList(): Promise<AudioInput[]> {
@@ -177,11 +177,13 @@ export class ObsClient {
         });
 
         const responses: ResponseMessage[] = await this.ws.callBatch(batch);
-        return responses
-            .flatMap(
-                ({ responseData }) => (responseData as OBSResponseTypes['GetInputList']).inputs
-            )
-            .map((config: unknown) => new AudioInput(this, config as InputConfig));
+        return Promise.all(
+            responses
+                .flatMap(
+                    ({ responseData }) => (responseData as OBSResponseTypes['GetInputList']).inputs
+                )
+                .map((config: unknown) => AudioInput.create(this, config as InputConfig))
+        );
     }
 
     private async getHotkeylist(): Promise<Hotkey[]> {

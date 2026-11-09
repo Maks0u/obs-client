@@ -1,5 +1,4 @@
-import { ObsClient } from './ObsClient.js';
-export default ObsClient;
+export { ObsClient as default } from './ObsClient.js';
 
 export * from './AudioInput.js';
 export * from './Hotkey.js';

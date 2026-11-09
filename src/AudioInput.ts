@@ -11,18 +11,22 @@ export class AudioInput extends EventEmitter {
     private readonly obs: ObsClient;
     unversionedInputKind: string;
 
-    constructor(obsClient: ObsClient, config: InputConfig) {
+    private constructor(obsClient: ObsClient, config: InputConfig) {
         super();
         this.obs = obsClient;
         this.inputKind = config.inputKind;
         this.inputName = config.inputName;
         this.inputUuid = config.inputUuid;
         this.unversionedInputKind = config.unversionedInputKind;
-
-        this.init();
     }
 
-    async init(): Promise<void> {
+    static async create(obsClient: ObsClient, config: InputConfig): Promise<AudioInput> {
+        const input = new AudioInput(obsClient, config);
+        await input.init();
+        return input;
+    }
+
+    private async init(): Promise<void> {
         this.mute = await this.isMuted();
         this.dB = await this.getVolume();
 

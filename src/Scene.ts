@@ -9,15 +9,19 @@ export class Scene {
     sceneName: string;
     sceneUuid: string;
 
-    constructor(obsClient: ObsClient, config: SceneConfig) {
+    private constructor(obsClient: ObsClient, config: SceneConfig) {
         this.obs = obsClient;
         this.sceneName = config.sceneName;
         this.sceneUuid = config.sceneUuid;
-
-        this.init();
     }
 
-    async init(): Promise<void> {
+    static async create(obsClient: ObsClient, config: SceneConfig): Promise<Scene> {
+        const scene = new Scene(obsClient, config);
+        await scene.init();
+        return scene;
+    }
+
+    private async init(): Promise<void> {
         const sceneItems = await this.getItemList();
         this.items = new Map(sceneItems.map(sceneItem => [sceneItem.sourceUuid, sceneItem]));
         this.inited = true;
