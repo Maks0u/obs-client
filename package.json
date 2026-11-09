@@ -1,6 +1,6 @@
 {
     "name": "@maks0u/obs-client",
-    "version": "2.0.0-rc.2",
+    "version": "2.0.0-rc.3",
     "description": "Wrapper for obs-websocket-js",
     "license": "MIT",
     "author": "Maks0u",
